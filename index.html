@@ -1362,26 +1362,28 @@
     // ===== FUNCIONES GOOGLE SHEETS =====
     async function guardarInventarioGoogleSheets(refaccion) {
       try {
+        const params = new URLSearchParams();
+        params.append('action', 'addRefaccion');
+        params.append('codigo', refaccion.codigo);
+        params.append('descripcion', refaccion.descripcion);
+        params.append('categoria', refaccion.categoria);
+        params.append('centro', refaccion.centro);
+        params.append('unidad', refaccion.unidad);
+        params.append('stock', refaccion.stock);
+        params.append('minimo', refaccion.minimo);
+        params.append('maximo', refaccion.maximo);
+        params.append('precio', refaccion.precio);
+        params.append('ubicacion', refaccion.ubicacion || '');
+        params.append('proveedor', refaccion.proveedor || '');
+        params.append('observaciones', refaccion.observaciones || '');
+
         const response = await fetch(APP_SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'addRefaccion',
-            codigo: refaccion.codigo,
-            descripcion: refaccion.descripcion,
-            categoria: refaccion.categoria,
-            centro: refaccion.centro,
-            unidad: refaccion.unidad,
-            stock: refaccion.stock,
-            minimo: refaccion.minimo,
-            maximo: refaccion.maximo,
-            precio: refaccion.precio,
-            ubicacion: refaccion.ubicacion,
-            proveedor: refaccion.proveedor,
-            observaciones: refaccion.observaciones
-          })
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
         });
+        console.log('Refacción guardada en Google Sheets:', refaccion.codigo);
       } catch(e) {
         console.error('Error guardando en Google Sheets:', e);
       }
@@ -1389,25 +1391,27 @@
 
     async function actualizarInventarioGoogleSheets(refaccion) {
       try {
+        const params = new URLSearchParams();
+        params.append('action', 'updateRefaccion');
+        params.append('codigo', refaccion.codigo);
+        params.append('descripcion', refaccion.descripcion);
+        params.append('categoria', refaccion.categoria);
+        params.append('centro', refaccion.centro);
+        params.append('unidad', refaccion.unidad);
+        params.append('minimo', refaccion.minimo);
+        params.append('maximo', refaccion.maximo);
+        params.append('precio', refaccion.precio);
+        params.append('ubicacion', refaccion.ubicacion || '');
+        params.append('proveedor', refaccion.proveedor || '');
+        params.append('observaciones', refaccion.observaciones || '');
+
         const response = await fetch(APP_SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'updateRefaccion',
-            codigo: refaccion.codigo,
-            descripcion: refaccion.descripcion,
-            categoria: refaccion.categoria,
-            centro: refaccion.centro,
-            unidad: refaccion.unidad,
-            minimo: refaccion.minimo,
-            maximo: refaccion.maximo,
-            precio: refaccion.precio,
-            ubicacion: refaccion.ubicacion,
-            proveedor: refaccion.proveedor,
-            observaciones: refaccion.observaciones
-          })
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
         });
+        console.log('Refacción actualizada en Google Sheets:', refaccion.codigo);
       } catch(e) {
         console.error('Error actualizando en Google Sheets:', e);
       }
@@ -1415,16 +1419,18 @@
 
     async function actualizarStockGoogleSheets(codigo, stock) {
       try {
+        const params = new URLSearchParams();
+        params.append('action', 'updateStock');
+        params.append('codigo', codigo);
+        params.append('stock', stock);
+
         const response = await fetch(APP_SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'updateStock',
-            codigo: codigo,
-            stock: stock
-          })
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
         });
+        console.log('Stock actualizado en Google Sheets:', codigo, stock);
       } catch(e) {
         console.error('Error actualizando stock en Google Sheets:', e);
       }
@@ -1432,15 +1438,17 @@
 
     async function eliminarInventarioGoogleSheets(codigo) {
       try {
+        const params = new URLSearchParams();
+        params.append('action', 'deleteRefaccion');
+        params.append('codigo', codigo);
+
         const response = await fetch(APP_SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'deleteRefaccion',
-            codigo: codigo
-          })
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
         });
+        console.log('Refacción eliminada en Google Sheets:', codigo);
       } catch(e) {
         console.error('Error eliminando en Google Sheets:', e);
       }
@@ -1448,23 +1456,25 @@
 
     async function guardarMovimientoGoogleSheets(movimiento) {
       try {
+        const params = new URLSearchParams();
+        params.append('action', 'addMovimiento');
+        params.append('folio', movimiento.folio);
+        params.append('fecha', movimiento.fecha);
+        params.append('tipo', movimiento.tipo);
+        params.append('codigo', movimiento.codigo);
+        params.append('descripcion', movimiento.descripcion || '');
+        params.append('cantidad', movimiento.cantidad);
+        params.append('responsable', movimiento.responsable);
+        params.append('ot', movimiento.ot || '');
+        params.append('observaciones', movimiento.observaciones || '');
+
         const response = await fetch(APP_SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'addMovimiento',
-            folio: movimiento.folio,
-            fecha: movimiento.fecha,
-            tipo: movimiento.tipo,
-            codigo: movimiento.codigo,
-            descripcion: movimiento.descripcion,
-            cantidad: movimiento.cantidad,
-            responsable: movimiento.responsable,
-            ot: movimiento.ot,
-            observaciones: movimiento.observaciones
-          })
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
         });
+        console.log('Movimiento guardado en Google Sheets:', movimiento.folio);
       } catch(e) {
         console.error('Error guardando movimiento en Google Sheets:', e);
       }

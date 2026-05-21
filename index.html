@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Almacén de Refacciones - AMINSA</title>
+  <title>Sistema de Almacén de Refacciones - AMINSA</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <link rel="icon" type="image/png" href="LOGO.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1756,13 +1756,16 @@
       const nuevaRefaccion = { codigo, descripcion, categoria, centro, unidad, stock, minimo, maximo, precio, ubicacion, proveedor, observaciones };
       inventario.push(nuevaRefaccion);
       guardarInventario();
-      await guardarInventarioGoogleSheets(nuevaRefaccion);
+
       actualizarEstadisticas();
       actualizarSelectCategorias();
       renderizarTabla();
       actualizarGraficas();
       cerrarModal('modal-nueva');
       mostrarToast('Refacción registrada correctamente', 'success');
+
+      // Sincronizar con Google Sheets en segundo plano
+      guardarInventarioGoogleSheets(nuevaRefaccion);
     }
 
     function abrirEditar(codigo) {
@@ -1800,26 +1803,32 @@
       inventario[idx].observaciones = document.getElementById('e-observaciones').value.trim();
 
       guardarInventario();
-      await actualizarInventarioGoogleSheets(inventario[idx]);
+
       actualizarEstadisticas();
       renderizarTabla();
       renderizarAlertas();
       actualizarGraficas();
       cerrarModal('modal-editar');
       mostrarToast('Refacción actualizada', 'success');
+
+      // Sincronizar con Google Sheets en segundo plano
+      actualizarInventarioGoogleSheets(inventario[idx]);
     }
 
     async function eliminarRefaccion(codigo) {
       if (!confirm(`¿Eliminar la refacción ${codigo}? Esta acción no se puede deshacer.`)) return;
       inventario = inventario.filter(r => r.codigo !== codigo);
       guardarInventario();
-      await eliminarInventarioGoogleSheets(codigo);
+
       actualizarEstadisticas();
       actualizarSelectCategorias();
       renderizarTabla();
       renderizarAlertas();
       actualizarGraficas();
       mostrarToast('Refacción eliminada', 'success');
+
+      // Sincronizar con Google Sheets en segundo plano
+      eliminarInventarioGoogleSheets(codigo);
     }
 
     function verDetalle(codigo) {
@@ -1951,9 +1960,9 @@
       contadorFolio++;
 
       guardarInventario();
-      await actualizarStockGoogleSheets(inventario[idx].codigo, inventario[idx].stock);
       guardarMovimientosLS();
-      await guardarMovimientoGoogleSheets(nuevoMov);
+
+      // Actualizar UI inmediatamente
       actualizarEstadisticas();
       renderizarTabla();
       renderizarMovimientos();
@@ -1963,6 +1972,10 @@
 
       const msgs = { entrada:'Entrada registrada correctamente', salida:'Salida registrada correctamente', ajuste:'Ajuste de inventario aplicado' };
       mostrarToast(msgs[tipoMovActual], 'success');
+
+      // Sincronizar con Google Sheets en segundo plano (sin await)
+      actualizarStockGoogleSheets(inventario[idx].codigo, inventario[idx].stock);
+      guardarMovimientoGoogleSheets(nuevoMov);
     }
 
     // ===== EXPORTAR CSV =====

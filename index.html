@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Almacén de Refacciones - AMINSA</title>
+  <title>Sistema de Almacén de Refacciones - AMINSA</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <link rel="icon" type="image/png" href="LOGO.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1309,10 +1309,6 @@
         const dataInventario = await responseInventario.json();
         if (dataInventario.success && dataInventario.data) {
           inventario = dataInventario.data;
-        } else {
-          // Fallback a localStorage
-          const invGuardado = localStorage.getItem('aminsa_inventario');
-          if (invGuardado) inventario = JSON.parse(invGuardado);
         }
 
         // Cargar movimientos desde Google Sheets
@@ -1320,26 +1316,20 @@
         const dataMovimientos = await responseMovimientos.json();
         if (dataMovimientos.success && dataMovimientos.data) {
           movimientos = dataMovimientos.data;
-        } else {
-          // Fallback a localStorage
-          const movGuardado = localStorage.getItem('aminsa_movimientos');
-          if (movGuardado) movimientos = JSON.parse(movGuardado);
         }
 
-        // Cargar contador de folio
-        const folioGuardado = localStorage.getItem('aminsa_folio');
-        if (folioGuardado) contadorFolio = parseInt(folioGuardado);
+        // Calcular contador de folio basado en movimientos existentes
+        if (movimientos.length > 0) {
+          const ultimoFolio = movimientos[movimientos.length - 1].folio;
+          const match = ultimoFolio.match(/-(\d+)$/);
+          if (match) {
+            contadorFolio = parseInt(match[1]) + 1;
+          }
+        }
 
       } catch(e) {
         console.error('Error cargando datos desde Google Sheets:', e);
-        // Fallback a localStorage
-        const invGuardado = localStorage.getItem('aminsa_inventario');
-        const movGuardado = localStorage.getItem('aminsa_movimientos');
-        const folioGuardado = localStorage.getItem('aminsa_folio');
-
-        if (invGuardado) inventario = JSON.parse(invGuardado);
-        if (movGuardado) movimientos = JSON.parse(movGuardado);
-        if (folioGuardado) contadorFolio = parseInt(folioGuardado);
+        mostrarToast('Error al cargar datos. Verifica tu conexión.', 'error');
       }
 
       actualizarEstadisticas();
@@ -1348,15 +1338,6 @@
       renderizarAlertas();
       actualizarSelectCategorias();
       actualizarGraficas();
-    }
-
-    function guardarInventario() {
-      localStorage.setItem('aminsa_inventario', JSON.stringify(inventario));
-    }
-
-    function guardarMovimientosLS() {
-      localStorage.setItem('aminsa_movimientos', JSON.stringify(movimientos));
-      localStorage.setItem('aminsa_folio', contadorFolio.toString());
     }
 
     // ===== FUNCIONES GOOGLE SHEETS =====
@@ -1755,7 +1736,6 @@
 
       const nuevaRefaccion = { codigo, descripcion, categoria, centro, unidad, stock, minimo, maximo, precio, ubicacion, proveedor, observaciones };
       inventario.push(nuevaRefaccion);
-      guardarInventario();
 
       actualizarEstadisticas();
       actualizarSelectCategorias();
@@ -1802,8 +1782,6 @@
       inventario[idx].proveedor = document.getElementById('e-proveedor').value.trim();
       inventario[idx].observaciones = document.getElementById('e-observaciones').value.trim();
 
-      guardarInventario();
-
       actualizarEstadisticas();
       renderizarTabla();
       renderizarAlertas();
@@ -1818,7 +1796,6 @@
     async function eliminarRefaccion(codigo) {
       if (!confirm(`¿Eliminar la refacción ${codigo}? Esta acción no se puede deshacer.`)) return;
       inventario = inventario.filter(r => r.codigo !== codigo);
-      guardarInventario();
 
       actualizarEstadisticas();
       actualizarSelectCategorias();
@@ -1958,9 +1935,6 @@
 
       movimientos.push(nuevoMov);
       contadorFolio++;
-
-      guardarInventario();
-      guardarMovimientosLS();
 
       // Actualizar UI inmediatamente
       actualizarEstadisticas();

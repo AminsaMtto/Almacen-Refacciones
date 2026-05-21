@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+ <!DOCTYPE html>
   <html lang="es">
   <head>
     <meta charset="UTF-8">
@@ -691,9 +691,9 @@
       </div>
       <div class="header-right">
         <div class="header-nav">
-          <a href="index.html" class="nav-link" id="nav-ordenes">Órdenes</a>
-          <a href="preventivos.html" class="nav-link" id="nav-preventivos">Preventivos</a>
-          <a href="refacciones.html" class="nav-link active">Refacciones</a>
+          <a href="https://aminsamtto.github.io/Orden-de-trabajo/index.html" class="nav-link">Órdenes</a>
+          <a href="https://aminsamtto.github.io/Mtto-preventivo/" class="nav-link">Preventivos</a>
+          <a href="index.html" class="nav-link active">Refacciones</a>
         </div>
     </header>
 
@@ -1283,20 +1283,7 @@
     <script>
       // ===== VERIFICACIÓN DE SESIÓN =====
       window.addEventListener('DOMContentLoaded', () => {
-        const sesion = verificarSesion();
-        if (!sesion) return;
-        
-        // Controlar visibilidad de navegación por permisos
-        const permisos = sesion.permisos || {};
-        const navOrdenes = document.getElementById('nav-ordenes');
-        const navPreventivos = document.getElementById('nav-preventivos');
-        
-        if (navOrdenes) {
-          navOrdenes.style.display = permisos.ver_ordenes_tab !== false ? 'block' : 'none';
-        }
-        if (navPreventivos) {
-          navPreventivos.style.display = permisos.ver_preventivos_tab ? 'block' : 'none';
-        }
+        verificarSesion();
       });
 
       // ===== CONFIGURACIÓN GOOGLE SHEETS =====

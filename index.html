@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+OCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -1367,8 +1367,19 @@
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: 'guardarInventario',
-            data: refaccion
+            action: 'addRefaccion',
+            codigo: refaccion.codigo,
+            descripcion: refaccion.descripcion,
+            categoria: refaccion.categoria,
+            centro: refaccion.centro,
+            unidad: refaccion.unidad,
+            stock: refaccion.stock,
+            minimo: refaccion.minimo,
+            maximo: refaccion.maximo,
+            precio: refaccion.precio,
+            ubicacion: refaccion.ubicacion,
+            proveedor: refaccion.proveedor,
+            observaciones: refaccion.observaciones
           })
         });
       } catch(e) {
@@ -1383,12 +1394,39 @@
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: 'actualizarInventario',
-            data: refaccion
+            action: 'updateRefaccion',
+            codigo: refaccion.codigo,
+            descripcion: refaccion.descripcion,
+            categoria: refaccion.categoria,
+            centro: refaccion.centro,
+            unidad: refaccion.unidad,
+            minimo: refaccion.minimo,
+            maximo: refaccion.maximo,
+            precio: refaccion.precio,
+            ubicacion: refaccion.ubicacion,
+            proveedor: refaccion.proveedor,
+            observaciones: refaccion.observaciones
           })
         });
       } catch(e) {
         console.error('Error actualizando en Google Sheets:', e);
+      }
+    }
+
+    async function actualizarStockGoogleSheets(codigo, stock) {
+      try {
+        const response = await fetch(APP_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'updateStock',
+            codigo: codigo,
+            stock: stock
+          })
+        });
+      } catch(e) {
+        console.error('Error actualizando stock en Google Sheets:', e);
       }
     }
 
@@ -1399,7 +1437,7 @@
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: 'eliminarInventario',
+            action: 'deleteRefaccion',
             codigo: codigo
           })
         });
@@ -1415,8 +1453,16 @@
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: 'guardarMovimiento',
-            data: movimiento
+            action: 'addMovimiento',
+            folio: movimiento.folio,
+            fecha: movimiento.fecha,
+            tipo: movimiento.tipo,
+            codigo: movimiento.codigo,
+            descripcion: movimiento.descripcion,
+            cantidad: movimiento.cantidad,
+            responsable: movimiento.responsable,
+            ot: movimiento.ot,
+            observaciones: movimiento.observaciones
           })
         });
       } catch(e) {
@@ -1895,7 +1941,7 @@
       contadorFolio++;
 
       guardarInventario();
-      await actualizarInventarioGoogleSheets(inventario[idx]);
+      await actualizarStockGoogleSheets(inventario[idx].codigo, inventario[idx].stock);
       guardarMovimientosLS();
       await guardarMovimientoGoogleSheets(nuevoMov);
       actualizarEstadisticas();

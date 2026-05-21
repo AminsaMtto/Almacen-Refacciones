@@ -1280,6 +1280,9 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // ===== CONFIGURACIÓN GOOGLE SHEETS =====
+    const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQ5K3YrqFZ4u4NWiuU7dxRY8YyD880MREne-K1LiUscO3GqCyNTMVQCvcB90vHy1WH/exec';
+
     // ===== ESTADO GLOBAL =====
     let inventario = [];
     let movimientos = [];
@@ -1292,8 +1295,6 @@
     let chartCategoria = null;
     let contadorFolio = 1;
 
-
-
     // ===== INICIALIZACIÓN =====
     document.addEventListener('DOMContentLoaded', () => {
       cargarDatos();
@@ -1301,23 +1302,44 @@
       inicializarGraficas();
     });
 
-    function cargarDatos() {
+    async function cargarDatos() {
       try {
+        // Cargar inventario desde Google Sheets
+        const responseInventario = await fetch(`${APP_SCRIPT_URL}?action=getInventario`);
+        const dataInventario = await responseInventario.json();
+        if (dataInventario.success && dataInventario.data) {
+          inventario = dataInventario.data;
+        } else {
+          // Fallback a localStorage
+          const invGuardado = localStorage.getItem('aminsa_inventario');
+          if (invGuardado) inventario = JSON.parse(invGuardado);
+        }
+
+        // Cargar movimientos desde Google Sheets
+        const responseMovimientos = await fetch(`${APP_SCRIPT_URL}?action=getMovimientos`);
+        const dataMovimientos = await responseMovimientos.json();
+        if (dataMovimientos.success && dataMovimientos.data) {
+          movimientos = dataMovimientos.data;
+        } else {
+          // Fallback a localStorage
+          const movGuardado = localStorage.getItem('aminsa_movimientos');
+          if (movGuardado) movimientos = JSON.parse(movGuardado);
+        }
+
+        // Cargar contador de folio
+        const folioGuardado = localStorage.getItem('aminsa_folio');
+        if (folioGuardado) contadorFolio = parseInt(folioGuardado);
+
+      } catch(e) {
+        console.error('Error cargando datos desde Google Sheets:', e);
+        // Fallback a localStorage
         const invGuardado = localStorage.getItem('aminsa_inventario');
         const movGuardado = localStorage.getItem('aminsa_movimientos');
         const folioGuardado = localStorage.getItem('aminsa_folio');
 
-        if (invGuardado) {
-          inventario = JSON.parse(invGuardado);
-        } else {
-          inventario = [];
-        }
-
+        if (invGuardado) inventario = JSON.parse(invGuardado);
         if (movGuardado) movimientos = JSON.parse(movGuardado);
         if (folioGuardado) contadorFolio = parseInt(folioGuardado);
-
-      } catch(e) {
-  
       }
 
       actualizarEstadisticas();
@@ -1335,6 +1357,71 @@
     function guardarMovimientosLS() {
       localStorage.setItem('aminsa_movimientos', JSON.stringify(movimientos));
       localStorage.setItem('aminsa_folio', contadorFolio.toString());
+    }
+
+    // ===== FUNCIONES GOOGLE SHEETS =====
+    async function guardarInventarioGoogleSheets(refaccion) {
+      try {
+        const response = await fetch(APP_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'guardarInventario',
+            data: refaccion
+          })
+        });
+      } catch(e) {
+        console.error('Error guardando en Google Sheets:', e);
+      }
+    }
+
+    async function actualizarInventarioGoogleSheets(refaccion) {
+      try {
+        const response = await fetch(APP_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'actualizarInventario',
+            data: refaccion
+          })
+        });
+      } catch(e) {
+        console.error('Error actualizando en Google Sheets:', e);
+      }
+    }
+
+    async function eliminarInventarioGoogleSheets(codigo) {
+      try {
+        const response = await fetch(APP_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'eliminarInventario',
+            codigo: codigo
+          })
+        });
+      } catch(e) {
+        console.error('Error eliminando en Google Sheets:', e);
+      }
+    }
+
+    async function guardarMovimientoGoogleSheets(movimiento) {
+      try {
+        const response = await fetch(APP_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'guardarMovimiento',
+            data: movimiento
+          })
+        });
+      } catch(e) {
+        console.error('Error guardando movimiento en Google Sheets:', e);
+      }
     }
 
     function configurarFechaHoy() {
@@ -1587,7 +1674,7 @@
       document.getElementById('modal-nueva').classList.add('visible');
     }
 
-    function guardarRefaccion() {
+    async function guardarRefaccion() {
       const codigo = document.getElementById('n-codigo').value.trim();
       const descripcion = document.getElementById('n-descripcion').value.trim();
       const categoria = document.getElementById('n-categoria').value;
@@ -1610,8 +1697,10 @@
         return;
       }
 
-      inventario.push({ codigo, descripcion, categoria, centro, unidad, stock, minimo, maximo, precio, ubicacion, proveedor, observaciones });
+      const nuevaRefaccion = { codigo, descripcion, categoria, centro, unidad, stock, minimo, maximo, precio, ubicacion, proveedor, observaciones };
+      inventario.push(nuevaRefaccion);
       guardarInventario();
+      await guardarInventarioGoogleSheets(nuevaRefaccion);
       actualizarEstadisticas();
       actualizarSelectCategorias();
       renderizarTabla();
@@ -1638,7 +1727,7 @@
       document.getElementById('modal-editar').classList.add('visible');
     }
 
-    function guardarEdicion() {
+    async function guardarEdicion() {
       if (!refaccionActual) return;
       const idx = inventario.findIndex(r => r.codigo === refaccionActual.codigo);
       if (idx === -1) return;
@@ -1655,6 +1744,7 @@
       inventario[idx].observaciones = document.getElementById('e-observaciones').value.trim();
 
       guardarInventario();
+      await actualizarInventarioGoogleSheets(inventario[idx]);
       actualizarEstadisticas();
       renderizarTabla();
       renderizarAlertas();
@@ -1663,10 +1753,11 @@
       mostrarToast('Refacción actualizada', 'success');
     }
 
-    function eliminarRefaccion(codigo) {
+    async function eliminarRefaccion(codigo) {
       if (!confirm(`¿Eliminar la refacción ${codigo}? Esta acción no se puede deshacer.`)) return;
       inventario = inventario.filter(r => r.codigo !== codigo);
       guardarInventario();
+      await eliminarInventarioGoogleSheets(codigo);
       actualizarEstadisticas();
       actualizarSelectCategorias();
       renderizarTabla();
@@ -1766,7 +1857,7 @@
       setTimeout(() => abrirModalMovimiento(tipo, refaccionActual?.codigo), 150);
     }
 
-    function guardarMovimiento() {
+    async function guardarMovimiento() {
       const fecha = document.getElementById('mv-fecha').value;
       const codigo = document.getElementById('mv-codigo').value;
       const cantidad = parseInt(document.getElementById('mv-cantidad').value);
@@ -1804,7 +1895,9 @@
       contadorFolio++;
 
       guardarInventario();
+      await actualizarInventarioGoogleSheets(inventario[idx]);
       guardarMovimientosLS();
+      await guardarMovimientoGoogleSheets(nuevoMov);
       actualizarEstadisticas();
       renderizarTabla();
       renderizarMovimientos();

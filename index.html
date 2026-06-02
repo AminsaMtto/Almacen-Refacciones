@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+  <!DOCTYPE html>
   <html lang="es">
   <head>
     <meta charset="UTF-8">
@@ -854,6 +854,8 @@
               <th>Mín / Máx</th>
               <th>Ubicación</th>
               <th>Precio Unit.</th>
+              <th>Tiempo Espera</th>
+              <th>Prioridad</th>
               <th>Estado</th>
               <th>Acciones</th>
             </tr>
@@ -1028,6 +1030,19 @@
               <label>Proveedor</label>
               <input type="text" id="n-proveedor" placeholder="Nombre del proveedor">
             </div>
+            <div class="form-group">
+              <label>Tiempo de Espera (días)</label>
+              <input type="number" id="n-tiempo-espera" placeholder="0" min="0">
+            </div>
+            <div class="form-group">
+              <label>Prioridad</label>
+              <select id="n-prioridad">
+                <option value="">Seleccionar...</option>
+                <option value="Alta">Alta</option>
+                <option value="Media">Media</option>
+                <option value="Baja">Baja</option>
+              </select>
+            </div>
             <div class="form-group span2">
               <label>Observaciones</label>
               <textarea id="n-observaciones" placeholder="Notas adicionales, especificaciones técnicas..."></textarea>
@@ -1117,6 +1132,19 @@
             <div class="form-group">
               <label>Proveedor</label>
               <input type="text" id="e-proveedor">
+            </div>
+            <div class="form-group">
+              <label>Tiempo de Espera (días)</label>
+              <input type="number" id="e-tiempo-espera" min="0">
+            </div>
+            <div class="form-group">
+              <label>Prioridad</label>
+              <select id="e-prioridad">
+                <option value="">Seleccionar...</option>
+                <option value="Alta">Alta</option>
+                <option value="Media">Media</option>
+                <option value="Baja">Baja</option>
+              </select>
             </div>
             <div class="form-group span2">
               <label>Observaciones</label>
@@ -1287,7 +1315,7 @@
       });
 
       // ===== CONFIGURACIÓN GOOGLE SHEETS =====
-      const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQ5K3YrqFZ4u4NWiuU7dxRY8YyD880MREne-K1LiUscO3GqCyNTMVQCvcB90vHy1WH/exec';
+      const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw6memNFbKkDSs8PyoOvj9Vp1bmR1h9bsGiRHSW1LnPhV0d0jpCQuMBR65xw74B6qQo/exec';
 
       // ===== ESTADO GLOBAL =====
       let inventario = [];
@@ -1532,7 +1560,7 @@
 
         if (filtrados.length === 0) {
           tbody.innerHTML = `
-            <tr><td colspan="11">
+            <tr><td colspan="13">
               <div class="empty-state">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                   <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
@@ -1565,6 +1593,8 @@
             <td style="font-family:'Inconsolata',monospace;font-size:12px;color:var(--texto-ter);">${r.minimo} / ${r.maximo || '—'}</td>
             <td style="font-family:'Inconsolata',monospace;font-size:11px;">${r.ubicacion || '—'}</td>
             <td style="font-family:'Inconsolata',monospace;font-size:12px;">$${r.precio.toFixed(2)}</td>
+            <td style="font-family:'Inconsolata',monospace;font-size:12px;">${r.tiempoEspera || 0} días</td>
+            <td>${r.prioridad ? `<span class="badge cat-badge">${r.prioridad}</span>` : '—'}</td>
             <td>${badgeEstado(estado)}</td>
             <td>
               <div class="acciones">
@@ -1709,7 +1739,7 @@
       }
 
       function abrirModalNueva() {
-        ['n-codigo','n-descripcion','n-stock','n-minimo','n-maximo','n-precio','n-ubicacion','n-proveedor','n-observaciones']
+        ['n-codigo','n-descripcion','n-stock','n-minimo','n-maximo','n-precio','n-ubicacion','n-proveedor','n-observaciones','n-tiempo-espera','n-prioridad']
           .forEach(id => document.getElementById(id).value = '');
         document.getElementById('n-categoria').value = '';
         document.getElementById('n-centro').value = '';
@@ -1729,6 +1759,8 @@
         const precio = parseFloat(document.getElementById('n-precio').value) || 0;
         const ubicacion = document.getElementById('n-ubicacion').value.trim();
         const proveedor = document.getElementById('n-proveedor').value.trim();
+        const tiempoEspera = parseInt(document.getElementById('n-tiempo-espera').value) || 0;
+        const prioridad = document.getElementById('n-prioridad').value;
         const observaciones = document.getElementById('n-observaciones').value.trim();
 
         if (!codigo || !descripcion || !categoria || !centro || !unidad) {
@@ -1740,7 +1772,7 @@
           return;
         }
 
-        const nuevaRefaccion = { codigo, descripcion, categoria, centro, unidad, stock, minimo, maximo, precio, ubicacion, proveedor, observaciones };
+        const nuevaRefaccion = { codigo, descripcion, categoria, centro, unidad, stock, minimo, maximo, precio, ubicacion, proveedor, tiempoEspera, prioridad, observaciones };
         inventario.push(nuevaRefaccion);
 
         actualizarEstadisticas();
@@ -1768,6 +1800,8 @@
         document.getElementById('e-precio').value = r.precio;
         document.getElementById('e-ubicacion').value = r.ubicacion;
         document.getElementById('e-proveedor').value = r.proveedor;
+        document.getElementById('e-tiempo-espera').value = r.tiempoEspera || 0;
+        document.getElementById('e-prioridad').value = r.prioridad || '';
         document.getElementById('e-observaciones').value = r.observaciones;
         document.getElementById('modal-editar').classList.add('visible');
       }
@@ -1786,6 +1820,8 @@
         inventario[idx].precio = parseFloat(document.getElementById('e-precio').value) || 0;
         inventario[idx].ubicacion = document.getElementById('e-ubicacion').value.trim();
         inventario[idx].proveedor = document.getElementById('e-proveedor').value.trim();
+        inventario[idx].tiempoEspera = parseInt(document.getElementById('e-tiempo-espera').value) || 0;
+        inventario[idx].prioridad = document.getElementById('e-prioridad').value;
         inventario[idx].observaciones = document.getElementById('e-observaciones').value.trim();
 
         actualizarEstadisticas();

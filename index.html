@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+ <!DOCTYPE html>
   <html lang="es">
   <head>
     <meta charset="UTF-8">
@@ -679,6 +679,18 @@
   </head>
   <body>
 
+    <!-- ── LOADING OVERLAY ── -->
+    <div id="loading-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0e0e0e;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+      <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite;">
+        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+      </svg>
+      <span style="color:#888;font-family:'Inconsolata',monospace;font-size:14px;">Cargando inventario...</span>
+    </div>
+
+    <style>
+      @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+
     <!-- ── HEADER ── -->
     <header>
       <div class="header-brand">
@@ -695,6 +707,7 @@
           <a href="https://aminsamtto.github.io/Mtto-preventivo/" class="nav-link">Preventivos</a>
           <a href="index.html" class="nav-link active">Refacciones</a>
         </div>
+      </div>
     </header>
 
     <!-- ── STATS BAR ── -->
@@ -1354,7 +1367,15 @@
 
           // Calcular contador de folio basado en movimientos existentes
           if (movimientos.length > 0) {
-            const ultimoFolio = movimientos[movimientos.length - 1].folio;
+            // Ordenar movimientos por folio numérico antes de extraer el contador
+            const movimientosOrdenados = [...movimientos].sort((a, b) => {
+              const matchA = a.folio.match(/-(\d+)$/);
+              const matchB = b.folio.match(/-(\d+)$/);
+              const numA = matchA ? parseInt(matchA[1]) : 0;
+              const numB = matchB ? parseInt(matchB[1]) : 0;
+              return numB - numA; // Orden descendente para obtener el último
+            });
+            const ultimoFolio = movimientosOrdenados[0].folio;
             const match = ultimoFolio.match(/-(\d+)$/);
             if (match) {
               contadorFolio = parseInt(match[1]) + 1;
@@ -1372,6 +1393,10 @@
         renderizarAlertas();
         actualizarSelectCategorias();
         actualizarGraficas();
+
+        // Ocultar overlay de carga
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
       }
 
       // ===== FUNCIONES GOOGLE SHEETS =====
@@ -1390,15 +1415,21 @@
           params.append('precio', refaccion.precio);
           params.append('ubicacion', refaccion.ubicacion || '');
           params.append('proveedor', refaccion.proveedor || '');
+          params.append('tiempoEspera', refaccion.tiempoEspera || 0);
+          params.append('prioridad', refaccion.prioridad || '');
           params.append('observaciones', refaccion.observaciones || '');
 
           const response = await fetch(APP_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: params
           });
-          console.log('Refacción guardada en Google Sheets:', refaccion.codigo);
+          const result = await response.json();
+          if (!result.success) {
+            console.error('Error guardando en Google Sheets:', result.error);
+          } else {
+            console.log('Refacción guardada en Google Sheets:', refaccion.codigo);
+          }
         } catch(e) {
           console.error('Error guardando en Google Sheets:', e);
         }
@@ -1418,15 +1449,21 @@
           params.append('precio', refaccion.precio);
           params.append('ubicacion', refaccion.ubicacion || '');
           params.append('proveedor', refaccion.proveedor || '');
+          params.append('tiempoEspera', refaccion.tiempoEspera || 0);
+          params.append('prioridad', refaccion.prioridad || '');
           params.append('observaciones', refaccion.observaciones || '');
 
           const response = await fetch(APP_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: params
           });
-          console.log('Refacción actualizada en Google Sheets:', refaccion.codigo);
+          const result = await response.json();
+          if (!result.success) {
+            console.error('Error actualizando en Google Sheets:', result.error);
+          } else {
+            console.log('Refacción actualizada en Google Sheets:', refaccion.codigo);
+          }
         } catch(e) {
           console.error('Error actualizando en Google Sheets:', e);
         }
@@ -1441,11 +1478,15 @@
 
           const response = await fetch(APP_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: params
           });
-          console.log('Stock actualizado en Google Sheets:', codigo, stock);
+          const result = await response.json();
+          if (!result.success) {
+            console.error('Error actualizando stock en Google Sheets:', result.error);
+          } else {
+            console.log('Stock actualizado en Google Sheets:', codigo, stock);
+          }
         } catch(e) {
           console.error('Error actualizando stock en Google Sheets:', e);
         }
@@ -1459,11 +1500,15 @@
 
           const response = await fetch(APP_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: params
           });
-          console.log('Refacción eliminada en Google Sheets:', codigo);
+          const result = await response.json();
+          if (!result.success) {
+            console.error('Error eliminando en Google Sheets:', result.error);
+          } else {
+            console.log('Refacción eliminada en Google Sheets:', codigo);
+          }
         } catch(e) {
           console.error('Error eliminando en Google Sheets:', e);
         }
@@ -1485,11 +1530,15 @@
 
           const response = await fetch(APP_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: params
           });
-          console.log('Movimiento guardado en Google Sheets:', movimiento.folio);
+          const result = await response.json();
+          if (!result.success) {
+            console.error('Error guardando movimiento en Google Sheets:', result.error);
+          } else {
+            console.log('Movimiento guardado en Google Sheets:', movimiento.folio);
+          }
         } catch(e) {
           console.error('Error guardando movimiento en Google Sheets:', e);
         }
@@ -1553,7 +1602,11 @@
           if (filtroCentro && r.centro !== filtroCentro) return false;
           if (terminoBusqueda) {
             const t = terminoBusqueda.toLowerCase();
-            return r.codigo.toLowerCase().includes(t) || r.descripcion.toLowerCase().includes(t);
+            return r.codigo.toLowerCase().includes(t) || 
+                   r.descripcion.toLowerCase().includes(t) ||
+                   (r.proveedor && r.proveedor.toLowerCase().includes(t)) ||
+                   (r.ubicacion && r.ubicacion.toLowerCase().includes(t)) ||
+                   (r.categoria && r.categoria.toLowerCase().includes(t));
           }
           return true;
         });
@@ -1990,7 +2043,7 @@
         mostrarToast(msgs[tipoMovActual], 'success');
 
         // Sincronizar con Google Sheets en segundo plano (sin await)
-        actualizarStockGoogleSheets(inventario[idx].codigo, inventario[idx].stock);
+        // El Apps Script ya actualiza el stock en addMovimiento, no necesitamos actualizarStockGoogleSheets
         guardarMovimientoGoogleSheets(nuevoMov);
       }
 

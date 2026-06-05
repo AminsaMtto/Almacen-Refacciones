@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+  <!DOCTYPE html>
   <html lang="es">
   <head>
     <meta charset="UTF-8">
@@ -1328,7 +1328,27 @@
       });
 
       // ===== CONFIGURACIÓN GOOGLE SHEETS =====
-      const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAMOVziBW_F3n_x9p6Om5eoNpFnGzK51C9m07Hhnb3BDatxLqbEX9qfWzrxnrOO1XL/exec';
+      const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbysgfzAIZAWAFzD2QXLa0JkKY7jQZNPQZPMr06p7dYuX0l1eezTxsWsEh2BnKoAAo7_/exec';
+
+      // ===== HELPER PARA OBTENER TOKEN DE AUTENTICACIÓN =====
+      function obtenerToken() {
+        try {
+          const sesion = JSON.parse(sessionStorage.getItem('aminsa_sesion') || '{}');
+          return sesion.token || '';
+        } catch(e) {
+          return '';
+        }
+      }
+
+      // ===== HELPER PARA OBTENER USUARIO DE AUTENTICACIÓN =====
+      function obtenerUsuario() {
+        try {
+          const sesion = JSON.parse(sessionStorage.getItem('aminsa_sesion') || '{}');
+          return sesion.usuario || '';
+        } catch(e) {
+          return '';
+        }
+      }
 
       // ===== ESTADO GLOBAL =====
       let inventario = [];
@@ -1352,14 +1372,14 @@
       async function cargarDatos() {
         try {
           // Cargar inventario desde Google Sheets
-          const responseInventario = await fetch(`${APP_SCRIPT_URL}?action=getInventario`);
+          const responseInventario = await fetch(`${APP_SCRIPT_URL}?action=getInventario&token=${encodeURIComponent(obtenerToken())}&usuario=${encodeURIComponent(obtenerUsuario())}`);
           const dataInventario = await responseInventario.json();
           if (dataInventario.success && dataInventario.data) {
             inventario = dataInventario.data;
           }
 
           // Cargar movimientos desde Google Sheets
-          const responseMovimientos = await fetch(`${APP_SCRIPT_URL}?action=getMovimientos`);
+          const responseMovimientos = await fetch(`${APP_SCRIPT_URL}?action=getMovimientos&token=${encodeURIComponent(obtenerToken())}&usuario=${encodeURIComponent(obtenerUsuario())}`);
           const dataMovimientos = await responseMovimientos.json();
           if (dataMovimientos.success && dataMovimientos.data) {
             movimientos = dataMovimientos.data;
@@ -1418,6 +1438,8 @@
           params.append('tiempoEspera', refaccion.tiempoEspera || 0);
           params.append('prioridad', refaccion.prioridad || '');
           params.append('observaciones', refaccion.observaciones || '');
+          params.append('token', obtenerToken());
+          params.append('usuario', obtenerUsuario());
 
           const response = await fetch(APP_SCRIPT_URL, {
             method: 'POST',
@@ -1452,6 +1474,8 @@
           params.append('tiempoEspera', refaccion.tiempoEspera || 0);
           params.append('prioridad', refaccion.prioridad || '');
           params.append('observaciones', refaccion.observaciones || '');
+          params.append('token', obtenerToken());
+          params.append('usuario', obtenerUsuario());
 
           const response = await fetch(APP_SCRIPT_URL, {
             method: 'POST',
@@ -1475,6 +1499,8 @@
           params.append('action', 'updateStock');
           params.append('codigo', codigo);
           params.append('stock', stock);
+          params.append('token', obtenerToken());
+          params.append('usuario', obtenerUsuario());
 
           const response = await fetch(APP_SCRIPT_URL, {
             method: 'POST',
@@ -1497,6 +1523,8 @@
           const params = new URLSearchParams();
           params.append('action', 'deleteRefaccion');
           params.append('codigo', codigo);
+          params.append('token', obtenerToken());
+          params.append('usuario', obtenerUsuario());
 
           const response = await fetch(APP_SCRIPT_URL, {
             method: 'POST',
@@ -1527,6 +1555,8 @@
           params.append('responsable', movimiento.responsable);
           params.append('ot', movimiento.ot || '');
           params.append('observaciones', movimiento.observaciones || '');
+          params.append('token', obtenerToken());
+          params.append('usuario', obtenerUsuario());
 
           const response = await fetch(APP_SCRIPT_URL, {
             method: 'POST',
